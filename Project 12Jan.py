@@ -31,13 +31,14 @@ print("\nMissing values per column:")
 print(df.isnull().sum())
 
 # Handle missing values
-df['education'].fillna(df['education'].mode()[0], inplace=True)
-df['cigsPerDay'].fillna(df['cigsPerDay'].mean(), inplace=True)
-df['BPMeds'].fillna(df['BPMeds'].mode()[0], inplace=True)
-df['totChol'].fillna(df['totChol'].mean(), inplace=True)
-df['BMI'].fillna(df['BMI'].mean(), inplace=True)
-df['heartRate'].fillna(df['heartRate'].mean(), inplace=True)
-df['glucose'].fillna(df['glucose'].mean(), inplace=True)
+df['education'] = df['education'].fillna(df['education'].mode()[0])
+df['cigsPerDay'] = df['cigsPerDay'].fillna(df['cigsPerDay'].mean())
+df['BPMeds'] = df['BPMeds'].fillna(df['BPMeds'].mode()[0])
+df['totChol'] = df['totChol'].fillna(df['totChol'].mean())
+df['BMI'] = df['BMI'].fillna(df['BMI'].mean())
+df['heartRate'] = df['heartRate'].fillna(df['heartRate'].mean())
+df['glucose'] = df['glucose'].fillna(df['glucose'].mean())
+
 
 # Remove duplicates
 df.drop_duplicates(inplace=True)
@@ -98,8 +99,18 @@ svm_predictions = svm_model.predict(X_test_scaled)
 print("\nSVM Accuracy:", accuracy_score(y_test, svm_predictions))
 
 # XGBoost with Hyperparameter Tuning
-xgb_params = {'n_estimators': [50, 100, 150], 'learning_rate': [0.01, 0.1, 0.2]}
-xgb_grid_search = GridSearchCV(XGBClassifier(random_state=42, eval_metric='logloss'), xgb_params, cv=5, scoring='accuracy')
+xgb_params = {
+    'learning_rate': [0.01, 0.1, 0.2],
+    'max_depth': [3, 5, 7],
+    'n_estimators': [100, 200]
+}
+# Initialize the model with eval_metric
+xgb_model = XGBClassifier(random_state=42, eval_metric='logloss')
+
+# Set up the GridSearchCV
+xgb_grid_search = GridSearchCV(xgb_model, xgb_params, cv=5, scoring='accuracy')
+
+# Fit the model
 xgb_grid_search.fit(X_train_scaled, y_train)
 best_xgb_model = xgb_grid_search.best_estimator_
 xgb_predictions = best_xgb_model.predict(X_test_scaled)
@@ -142,6 +153,28 @@ plt.ylabel('Accuracy')
 plt.title('Model Comparison')
 plt.xticks(rotation=45)
 plt.show()
+
+models = {
+    "Logistic Regression": lr_model,
+    "Decision Tree": best_dt_model,
+    'svm': svm_model,
+    "XGBoost": best_xgb_model,
+}
+
+for name, model in models.items():
+    print(f"\n--- {name} ---")
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+    
+    # Confusion Matrix
+    cm = confusion_matrix(y_test, y_pred)
+    ConfusionMatrixDisplay(cm).plot()
+    plt.title(f"Confusion Matrix for {name}")
+    plt.show()
+    
+    # Classification Report
+    print(f"Classification Report for {name}:\n")
+    print(classification_report(y_test, y_pred))
 
 # Save Ensemble Model
 joblib.dump(ensemble_model, 'ensemble_model.pkl')
