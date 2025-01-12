@@ -4,8 +4,11 @@ import joblib
 import plotly.graph_objects as go
 
 # Load the saved ensemble model
-model_path = 'ensemble_model.pkl'  # Update with the correct path
-ensemble_model = joblib.load(model_path)
+model_path = 'ensemble_model.pkl'
+try:
+    ensemble_model = joblib.load(model_path)
+except Exception as e:
+    st.error(f"Error loading model: {e}")
 
 # Add a title and a banner
 st.markdown(
